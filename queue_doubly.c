@@ -23,6 +23,10 @@
    implementing a queue of integers. You should leave these
    declarations alone. */
 
+struct Node;
+
+struct Node* makeNewNode(int x);
+
 struct Queue;
 
 /* Allocate and return a pointer to an empty queue, or return NULL if
@@ -72,7 +76,7 @@ void queue_print(struct Queue* queue);
 
 /********** START OF CODE TO MODIFY **********/
 
-#define QUEUE_CAPACITY 100000 // one hundred thousand
+//#define QUEUE_CAPACITY 100000 // one hundred thousand
 
 /* This is a poor implementation of the queue interface based upon a
    fixed-size array. The array approach has two big flaws: it is
@@ -102,12 +106,12 @@ struct Node{
 
 
 struct Node* makeNewNode(int x){
-  struct Node* newNode = malloc(sizeof(struct Queue ));
-  if (node == NULL)
+  struct Node* newNode = malloc(sizeof(struct Node ));
+  if (newNode == NULL)
     return NULL;
 
 
-  newNode->data = 0;
+  newNode->data = x;
   newNode->prev = NULL;
   newNode->next = NULL;
   
@@ -125,10 +129,8 @@ struct Queue {
 
 
 struct Queue* queue_make() {
-  struct Queue* queue;
-
-  node = malloc(sizeof(struct Queue));
-  if (node == NULL)
+  struct Queue* queue = malloc(sizeof(struct Queue));
+  if (queue == NULL)
     return NULL;
 
 
@@ -148,33 +150,64 @@ void queue_free(struct Queue* queue) {
   
 int queue_length(struct Queue* queue) {
   assert(queue != NULL);
-  return queue->n;
+  return queue->length;
 }
 
 int queue_push_front(struct Queue* queue, int data) {
-  int i;
+ 
   assert(queue != NULL);
+
   
-  queue->data = data; 
-  head->prev = qu
 
-  for (i = QUEUE_CAPACITY - 1; i > 0; i--)
-    queue->data[i] = queue->data[i-1];
+  struct Node* newNode =  makeNewNode(data);
 
-  queue->data[0] = data;
 
-  queue->n++;
+  if (queue->head == NULL){
+    queue->head = newNode;
+    
+    queue->length++;
+    
+    return 1;
+  }
+
+  queue->head->prev = newNode;
+  newNode->next = queue->head;
+  queue->head = newNode;
+  
+
+ queue->length++;
 
   return 1;
 }
 
 int queue_push_back(struct Queue* queue, int data) {
   assert(queue != NULL);
-  assert(queue->n < QUEUE_CAPACITY);
+  //assert(queue->length < QUEUE_CAPACITY);
 
-  queue->data[queue->n] = data;
-  queue->n++;
+  struct Node* tmp = queue->head;
+  struct Node* newNode  = makeNewNode(data);
 
+  //printf("test1\n");
+  if(queue->head == NULL){
+    //printf("first\n");
+    queue->head = newNode;
+    queue->length++;
+    return 1;
+  }
+
+  //printf("test2\n");
+  
+  while(tmp->next != NULL){
+      tmp = tmp->next;
+  }
+
+  tmp->next = newNode;
+  newNode->prev = tmp;
+
+  queue->length++;
+
+  //printf("test3\n");
+  
   return 1;
 }
 
@@ -182,39 +215,65 @@ int queue_front(struct Queue* queue) {
   assert(queue != NULL);
   assert(queue_length(queue) > 0);
 
-  return queue->data[0];
+  struct Node* tmp =  queue->head;;
+
+  
+  return tmp->data;
 }
 
 int queue_back(struct Queue* queue) {
   assert(queue != NULL);
   assert(queue_length(queue) > 0);
 
-  return queue->data[queue->n - 1];
+  struct Node* tmp = queue->head;
+
+  
+  while(tmp->next != NULL){
+      tmp = tmp->next;
+  }
+
+  return tmp->data;
 }
 
 void queue_pop_front(struct Queue* queue) {
-  int i;
+  
 
   assert(queue != NULL);
   assert(queue_length(queue) > 0);
 
-  for (i = 1; i < QUEUE_CAPACITY; i++)
-    queue->data[i - 1] = queue->data[i];
+ 
+  struct Node* tmp = malloc(sizeof(struct Node));
+  
+  tmp = queue->head;
+  queue->head = queue->head->next;;
+  free(tmp);
 
-  queue->n--;
+  queue->length--;
 }
 
 void queue_pop_back(struct Queue* queue) {
   assert(queue != NULL);
   assert(queue_length(queue) > 0);
 
-  queue->n--;
+
+  struct Node* tmp = queue->head;
+ 
+  while(tmp->next != NULL){
+      tmp = tmp->next;
+  }
+ 
+  tmp->prev->next  = NULL;
+  tmp->prev = NULL;
+    
+  free(tmp);
+
+  queue->length--;
 }
 
 void queue_clear(struct Queue* queue) {
   assert(queue != NULL);
-
-  queue->n = 0;
+  queue->head = NULL;
+  queue->length = 0;
 }
 
 void queue_print(struct Queue* queue) {
@@ -223,10 +282,13 @@ void queue_print(struct Queue* queue) {
   assert(queue != NULL);
 
   printf("queue:");
+  struct Node* tmp = queue->head;
 
-  for (i = 0; i < queue->n; i++)
-    printf(" %i", queue->data[i]);
-
+  while(tmp != NULL){
+    printf(" %d",tmp->data);
+    tmp = tmp->next;
+  }
+  
   printf("\n");
 }
 
@@ -339,7 +401,8 @@ int main(void) {
 
   for (i = 0; i < 1000000; i++) {
     queue_push_back(queue, i);
-    assert(queue_front(queue) == 0);
+    //printf(" %d ",i);
+x    assert(queue_front(queue) == 0);
     assert(queue_back(queue) == i);
   }
   assert(queue_length(queue) == 1000000);
